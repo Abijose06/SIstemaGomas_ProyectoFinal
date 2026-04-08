@@ -1,0 +1,64 @@
+﻿2026-04-03 01:06:56.127 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 01:06:56.244 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 01:16:05.034 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 01:16:05.132 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 01:16:54.149 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 01:16:54.227 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 01:21:04.837 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 01:21:04.917 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 01:23:54.767 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 01:23:54.868 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 01:25:44.571 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 01:25:44.672 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 01:30:56.575 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 01:30:56.680 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 01:31:36.753 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 01:31:36.849 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 01:32:14.132 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 01:32:14.257 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 01:33:22.124 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 01:33:22.220 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 01:37:22.297 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 01:37:22.394 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 01:42:19.704 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 01:42:19.793 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 01:45:56.761 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 01:45:56.918 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 01:50:56.085 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 01:50:56.208 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 01:56:46.581 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 01:56:46.699 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 02:08:49.284 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 02:08:49.388 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 02:14:54.135 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 02:14:54.232 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 11:04:12.542 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 11:04:12.679 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 11:08:33.422 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 11:08:33.519 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 11:42:04.490 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 11:42:04.619 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 11:54:32.232 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 11:54:32.363 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 13:11:04.509 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 13:11:04.608 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 13:54:14.805 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 13:54:14.916 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 16:49:45.151 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 16:49:45.268 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 17:26:13.404 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 17:26:13.504 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 17:32:05.645 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 17:32:05.794 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 17:33:49.884 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 17:33:49.979 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 18:04:22.517 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 18:04:22.633 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 18:32:14.272 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 18:32:14.392 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 18:39:49.127 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 18:39:49.225 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 19:00:08.337 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 19:00:08.451 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.
+2026-04-03 19:03:46.565 INFO  Logging to 'C:\SIstemaGomas\SIstemaGomas\Web\App_Data\' with level Info
+2026-04-03 19:03:46.726 INFO  No valid license could be found. Falling back to trial license with start date '2026-04-03'.

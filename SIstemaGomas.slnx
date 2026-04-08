@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
+    <Project Path="SistemaGomas.Messages/SistemaGomas.Messages.csproj" Id="1d3fc171-b0fc-469d-96b3-ab0cb5f74a0e" />
   </Folder>
   <Project Path="Caja/CajaGomasPOS/Caja.csproj" Id="40a17b8f-db67-4886-8af5-df305c116291" />
   <Project Path="Core/Core.csproj" Id="4073d341-5831-425d-a17c-0f0410f28a54" />

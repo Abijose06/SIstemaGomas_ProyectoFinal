@@ -5,48 +5,72 @@ using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using WebGomas.Models;
+using System.Data.SqlClient;
 
 namespace WebGomas
 {
     public partial class Historial : System.Web.UI.Page
     {
         // -------------------------------------------------------
-        // Datos simulados
-        // -------------------------------------------------------
-        private List<Pedido> ObtenerPedidos()
-        {
-            return new List<Pedido>
-            {
-                new Pedido { Id = 1001, Fecha = "01/03/2026", Total = 185.00m, Estado = "Completado"  },
-                new Pedido { Id = 1002, Fecha = "05/03/2026", Total = 340.00m, Estado = "Completado"  },
-                new Pedido { Id = 1003, Fecha = "10/03/2026", Total = 155.00m, Estado = "Pendiente"   },
-                new Pedido { Id = 1004, Fecha = "15/03/2026", Total = 290.00m, Estado = "Procesando"  },
-                new Pedido { Id = 1005, Fecha = "20/03/2026", Total = 170.00m, Estado = "Completado"  }
-            };
-        }
-
-        // -------------------------------------------------------
-        // Carga inicial
+        // Carga inicial (Corregida)
         // -------------------------------------------------------
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (!IsPostBack)
-            {
-                CargarHistorial();
-            }
-
-            // Proteger la página
+            // 1. PRIMERO protegemos la página (si no hay sesión, lo sacamos)
             if (Session["usuario"] == null)
             {
                 Response.Redirect("Login.aspx");
                 return;
             }
 
+            // 2. LUEGO cargamos los datos si es la primera vez que entra a la página
             if (!IsPostBack)
             {
-                ActualizarHeader();    // ← agregar esta línea
-                                       // ... tu código existente que ya tenías
+                ActualizarHeader();
+                CargarHistorial();
             }
+        }
+            // -------------------------------------------------------
+            // HISTORIAL DESDE LA BASE DE DATOS CENTRAL
+            // -------------------------------------------------------
+        private List<Pedido> ObtenerPedidos()
+        {
+            // 1. Declaramos la lista y las variables que Visual Studio no encontraba
+            List<Pedido> listaBD = new List<Pedido>();
+            string connectionString = @"Server=(localdb)\MSSQLLocalDB;Database=GomasDB;Trusted_Connection=True;";
+            string idUsuario = Session["usuario"].ToString();
+
+            using (SqlConnection con = new SqlConnection(connectionString))
+            {
+                // 2. Buscamos en tblFactura con las columnas correctas
+                string query = "SELECT IdFactura, Fecha, TotalGeneral AS Total, EstadoFactura AS Estado FROM tblFactura WHERE IdCliente = 1 ORDER BY Fecha DESC";
+                SqlCommand cmd = new SqlCommand(query, con);
+                // Buscamos las facturas del cliente 1, que es el que usamos para guardar en el carrito
+                cmd.Parameters.AddWithValue("@IdCliente", 1);
+
+                try
+                {
+                    con.Open();
+                    SqlDataReader reader = cmd.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        listaBD.Add(new Pedido
+                        {
+                            Id = Convert.ToInt32(reader["IdFactura"]),
+                            Fecha = Convert.ToDateTime(reader["Fecha"]).ToString("dd/MM/yyyy"),
+                            Total = reader["Total"] != DBNull.Value ? Convert.ToDecimal(reader["Total"]) : 0m,
+                            Estado = reader["Estado"].ToString()
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Falla en silencio si hay error de conexión
+                }
+            }
+
+            // 3. Devolvemos la lista llena (esto quita el error de "not all code paths return a value")
+            return listaBD;
         }
 
         private void ActualizarHeader()

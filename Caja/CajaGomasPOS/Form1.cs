@@ -7,14 +7,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Data.SqlClient;
 
 namespace CajaGomasPOS
 {
     public partial class Form1 : Form
     {
+        // --- NUEVO: Variable para que NServiceBus encuentre esta pantalla ---
+        public static Form1 InstanciaActual;
         public Form1()
         {
             InitializeComponent();
+            InstanciaActual = this; // <-- AGREGAR ESTA LÍNEA
         }
 
         string reciboMetodo = "";
@@ -23,41 +27,75 @@ namespace CajaGomasPOS
 
         public decimal FondoCaja = 0;
         public decimal TotalEfectivoDelDia = 0;
+        // --- MEMORIA TEMPORAL PARA IMPRESIÓN WEB ---
+        private bool imprimiendoOrdenWeb = false;
+        private List<SistemaGomas.Messages.ArticuloWeb> reciboWebArticulos;
+        private decimal reciboWebSubtotal = 0;
+        private decimal reciboWebImpuesto = 0;
+        private decimal reciboWebTotal = 0;
 
-        // 👉 PARA EL EQUIPO DE INTEGRACIÓN (1/3): 
-        // Esta lista simula la tabla 'Producto'. Cuando conecten la Base de Datos, 
-        // deben borrar esta lista y llenar el 'cmbBuscarItem' haciendo un SELECT 
-        // a la BD concatenando Marca + Modelo + Medida.
-        List<string> inventarioGomas = new List<string>
+        // --- CONEXIÓN A LA BASE DE DATOS CENTRAL ---
+        string connectionString = @"Server=(localdb)\MSSQLLocalDB;Database=GomasDB;Trusted_Connection=True;";
+
+        List<string> inventarioGomas = new List<string>();
+
+        private void CargarInventarioDesdeBD()
         {
-            "Michelin Pilot Sport 4 - 225/45R17",
-            "Michelin Pilot Sport 4 - 245/40R18",
-            "Goodyear Eagle F1 - 205/55R16",
-            "Pirelli Cinturato P7 - 225/50R17",
-            "Bridgestone Turanza - 195/65R15"
-        };
+            inventarioGomas.Clear();
+            using (SqlConnection con = new SqlConnection(connectionString))
+            {
+                string query = "SELECT Marca + ' ' + Modelo + ' - ' + Medida AS Descripcion FROM tblProducto WHERE Estado = 1";
+                SqlCommand cmd = new SqlCommand(query, con);
+                try
+                {
+                    con.Open();
+                    SqlDataReader reader = cmd.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        inventarioGomas.Add(reader["Descripcion"].ToString());
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error al conectar a la Base de Datos: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
         // =========================================================================
         // MOTOR DE PRECIOS CENTRAL (NUEVO)
         // =========================================================================
         private decimal ObtenerPrecioArticulo(string descripcion)
         {
-            // 👉 PARA EL EQUIPO DE INTEGRACIÓN (2/3): 
-            // Este switch está "quemado" en el código para la maqueta. 
-            // En producción, deben cambiar esta función para que reciba el nombre del item 
-            // y haga una consulta a SQL (ej. SELECT PrecioVenta FROM Producto WHERE...)
-            // y retorne el valor real de la base de datos.
-
-            switch (descripcion)
+            decimal precio = 0m;
+            using (SqlConnection con = new SqlConnection(connectionString))
             {
-                case "Michelin Pilot Sport 4 - 225/45R17": return 185.00m;
-                case "Michelin Pilot Sport 4 - 245/40R18": return 210.00m;
-                case "Goodyear Eagle F1 - 205/55R16": return 160.00m;
-                case "Pirelli Cinturato P7 - 225/50R17": return 145.00m;
-                case "Bridgestone Turanza - 195/65R15": return 130.00m;
-                case "Alineación Computarizada": return 45.00m;
-                case "Balanceo por Goma": return 15.00m;
-                default: return 0m;
+                try
+                {
+                    con.Open();
+                    // 1. Intentamos buscar si es un Producto (Goma)
+                    string queryProducto = "SELECT PrecioVenta FROM tblProducto WHERE (Marca + ' ' + Modelo + ' - ' + Medida) = @desc AND Estado = 1";
+                    using (SqlCommand cmd = new SqlCommand(queryProducto, con))
+                    {
+                        cmd.Parameters.AddWithValue("@desc", descripcion);
+                        object result = cmd.ExecuteScalar();
+                        if (result != null) return Convert.ToDecimal(result);
+                    }
+
+                    // 2. Si no lo encuentra como goma, buscamos si es un Servicio (Taller)
+                    string queryServicio = "SELECT Precio FROM tblServicio WHERE NombreServicio = @desc AND Estado = 1";
+                    using (SqlCommand cmdServicio = new SqlCommand(queryServicio, con))
+                    {
+                        cmdServicio.Parameters.AddWithValue("@desc", descripcion);
+                        object result = cmdServicio.ExecuteScalar();
+                        if (result != null) return Convert.ToDecimal(result);
+                    }
+                }
+                catch
+                {
+                    // Si ocurre un error, simplemente retornará 0 para que no explote la caja
+                }
             }
+            return precio;
         }
         public void ActualizarGaveta()
         {
@@ -98,6 +136,9 @@ namespace CajaGomasPOS
         private void Form1_Load(object sender, EventArgs e)
         {
             ActualizarGaveta();
+            // --- NUEVA LÍNEA AGREGADA ---
+            CargarInventarioDesdeBD();
+            // ---------------------------
             cmbCliente.Items.Add("Cliente Genérico (Al Contado)");
             cmbCliente.Items.Add("Juan Pérez");
             cmbCliente.Items.Add("María Gómez");
@@ -269,62 +310,106 @@ namespace CajaGomasPOS
 
             e.Graphics.DrawString("PRECISION TIRE", fuenteTitulo, Brushes.Black, new PointF(80, y));
             y += 30;
-            e.Graphics.DrawString("Recibo de Venta", fuenteNormal, Brushes.Black, new PointF(100, y));
+
+            // Título dinámico
+            string tituloRecibo = imprimiendoOrdenWeb ? "Recibo de Venta (WEB)" : "Recibo de Venta";
+            e.Graphics.DrawString(tituloRecibo, fuenteNormal, Brushes.Black, new PointF(80, y));
             y += 30;
-            e.Graphics.DrawString($"Cliente: {cmbCliente.Text}", fuenteNormal, Brushes.Black, new PointF(10, y));
-            y += 20;
-            e.Graphics.DrawString($"Atendido por: {cmbEmpleado.Text}", fuenteNormal, Brushes.Black, new PointF(10, y));
-            y += 20;
-            e.Graphics.DrawString($"Sucursal: {cmbSucursal.Text}", fuenteNormal, Brushes.Black, new PointF(10, y));
-            y += 25;
-            // --------------------------------------------------------------------------
 
-            e.Graphics.DrawString("-------------------------------------------------", fuenteNormal, Brushes.Black, new PointF(10, y));
-            y += 20;
-
-            e.Graphics.DrawString("-------------------------------------------------", fuenteNormal, Brushes.Black, new PointF(10, y));
-            y += 20;
-
-            foreach (DataGridViewRow fila in dgvCarrito.Rows)
+            // =========================================================
+            // LÓGICA SI ES UNA ORDEN WEB
+            // =========================================================
+            if (imprimiendoOrdenWeb)
             {
-                string descripcion = fila.Cells[1].Value.ToString();
-                string cantidad = fila.Cells[2].Value.ToString();
-                string subTotalFila = fila.Cells[4].Value.ToString();
-
-                e.Graphics.DrawString($"{cantidad}x {descripcion}", fuenteNormal, Brushes.Black, new PointF(10, y));
-                e.Graphics.DrawString($"${subTotalFila}", fuenteNormal, Brushes.Black, new PointF(250, y));
-                y += 25;
-            }
-
-            e.Graphics.DrawString("-------------------------------------------------", fuenteNormal, Brushes.Black, new PointF(10, y));
-            y += 20;
-            e.Graphics.DrawString($"SubTotal: {lblSubTotal.Text}", fuenteNormal, Brushes.Black, new PointF(150, y));
-            y += 20;
-            e.Graphics.DrawString($"Impuesto: {lblImpuesto.Text}", fuenteNormal, Brushes.Black, new PointF(150, y));
-            y += 25;
-            e.Graphics.DrawString($"TOTAL: {lblTotal.Text}", fuenteTitulo, Brushes.Black, new PointF(120, y));
-            y += 30;
-            e.Graphics.DrawString("-------------------------------------------------", fuenteNormal, Brushes.Black, new PointF(10, y));
-            y += 20;
-
-            e.Graphics.DrawString($"Pago en: {reciboMetodo}", fuenteNormal, Brushes.Black, new PointF(10, y));
-            y += 20;
-
-            if (reciboMetodo == "Tarjeta")
-            {
-                e.Graphics.DrawString($"Monto Cobrado: {reciboEfectivo.ToString("C")}", fuenteNormal, Brushes.Black, new PointF(10, y));
+                e.Graphics.DrawString("Cliente: Cliente Online", fuenteNormal, Brushes.Black, new PointF(10, y));
                 y += 20;
+                e.Graphics.DrawString("Atendido por: Plataforma Web", fuenteNormal, Brushes.Black, new PointF(10, y));
+                y += 20;
+                e.Graphics.DrawString($"Sucursal: {cmbSucursal.Text}", fuenteNormal, Brushes.Black, new PointF(10, y));
+                y += 25;
+
+                e.Graphics.DrawString("-------------------------------------------------", fuenteNormal, Brushes.Black, new PointF(10, y));
+                y += 20;
+
+                if (reciboWebArticulos != null)
+                {
+                    foreach (var item in reciboWebArticulos)
+                    {
+                        e.Graphics.DrawString($"{item.Cantidad}x {item.Descripcion}", fuenteNormal, Brushes.Black, new PointF(10, y));
+                        e.Graphics.DrawString($"${item.Subtotal}", fuenteNormal, Brushes.Black, new PointF(250, y));
+                        y += 25;
+                    }
+                }
+
+                e.Graphics.DrawString("-------------------------------------------------", fuenteNormal, Brushes.Black, new PointF(10, y));
+                y += 20;
+                e.Graphics.DrawString($"SubTotal: {reciboWebSubtotal:C}", fuenteNormal, Brushes.Black, new PointF(150, y));
+                y += 20;
+                e.Graphics.DrawString($"Impuesto: {reciboWebImpuesto:C}", fuenteNormal, Brushes.Black, new PointF(150, y));
+                y += 25;
+                e.Graphics.DrawString($"TOTAL: {reciboWebTotal:C}", fuenteTitulo, Brushes.Black, new PointF(120, y));
+                y += 30;
+                e.Graphics.DrawString("-------------------------------------------------", fuenteNormal, Brushes.Black, new PointF(10, y));
+                y += 20;
+                e.Graphics.DrawString("Pago en: Tarjeta (Pasarela de Pago Online)", fuenteNormal, Brushes.Black, new PointF(10, y));
+                y += 40;
             }
+            // =========================================================
+            // LÓGICA SI ES UNA VENTA EN CAJA FÍSICA (Tú código original)
+            // =========================================================
             else
             {
-                e.Graphics.DrawString($"Recibido: {reciboEfectivo.ToString("C")}", fuenteNormal, Brushes.Black, new PointF(10, y));
+                e.Graphics.DrawString($"Cliente: {cmbCliente.Text}", fuenteNormal, Brushes.Black, new PointF(10, y));
                 y += 20;
-                e.Graphics.DrawString($"Devuelta: {reciboDevuelta.ToString("C")}", fuenteNormal, Brushes.Black, new PointF(10, y));
+                e.Graphics.DrawString($"Atendido por: {cmbEmpleado.Text}", fuenteNormal, Brushes.Black, new PointF(10, y));
+                y += 20;
+                e.Graphics.DrawString($"Sucursal: {cmbSucursal.Text}", fuenteNormal, Brushes.Black, new PointF(10, y));
+                y += 25;
+
+                e.Graphics.DrawString("-------------------------------------------------", fuenteNormal, Brushes.Black, new PointF(10, y));
+                y += 20;
+
+                foreach (DataGridViewRow fila in dgvCarrito.Rows)
+                {
+                    string descripcion = fila.Cells[1].Value.ToString();
+                    string cantidad = fila.Cells[2].Value.ToString();
+                    string subTotalFila = fila.Cells[4].Value.ToString();
+
+                    e.Graphics.DrawString($"{cantidad}x {descripcion}", fuenteNormal, Brushes.Black, new PointF(10, y));
+                    e.Graphics.DrawString($"${subTotalFila}", fuenteNormal, Brushes.Black, new PointF(250, y));
+                    y += 25;
+                }
+
+                e.Graphics.DrawString("-------------------------------------------------", fuenteNormal, Brushes.Black, new PointF(10, y));
+                y += 20;
+                e.Graphics.DrawString($"SubTotal: {lblSubTotal.Text}", fuenteNormal, Brushes.Black, new PointF(150, y));
+                y += 20;
+                e.Graphics.DrawString($"Impuesto: {lblImpuesto.Text}", fuenteNormal, Brushes.Black, new PointF(150, y));
+                y += 25;
+                e.Graphics.DrawString($"TOTAL: {lblTotal.Text}", fuenteTitulo, Brushes.Black, new PointF(120, y));
+                y += 30;
+                e.Graphics.DrawString("-------------------------------------------------", fuenteNormal, Brushes.Black, new PointF(10, y));
+                y += 20;
+                e.Graphics.DrawString($"Pago en: {reciboMetodo}", fuenteNormal, Brushes.Black, new PointF(10, y));
+                y += 20;
+
+                if (reciboMetodo == "Tarjeta")
+                {
+                    e.Graphics.DrawString($"Monto Cobrado: {reciboEfectivo:C}", fuenteNormal, Brushes.Black, new PointF(10, y));
+                    y += 20;
+                }
+                else
+                {
+                    e.Graphics.DrawString($"Recibido: {reciboEfectivo:C}", fuenteNormal, Brushes.Black, new PointF(10, y));
+                    y += 20;
+                    e.Graphics.DrawString($"Devuelta: {reciboDevuelta:C}", fuenteNormal, Brushes.Black, new PointF(10, y));
+                    y += 20;
+                }
+                e.Graphics.DrawString("-------------------------------------------------", fuenteNormal, Brushes.Black, new PointF(10, y));
                 y += 20;
             }
 
-            e.Graphics.DrawString("-------------------------------------------------", fuenteNormal, Brushes.Black, new PointF(10, y));
-            y += 20;
+            // Pie de página común para ambos
             e.Graphics.DrawString("¡Gracias por preferir Precision Tire!", fuenteNormal, Brushes.Black, new PointF(50, y));
         }
         private void btnCierreCaja_Click(object sender, EventArgs e)
@@ -367,6 +452,68 @@ namespace CajaGomasPOS
                 cmbBuscarItem.SelectedIndex = -1; // Deselecciona el artículo
                 lblPrecioVista.Text = "Precio: $0.00";
             }
+        }
+        // =========================================================================
+        // FACTURACIÓN WEB SILENCIOSA
+        // =========================================================================
+        public void ProcesarOrdenWebEnSilencio(decimal subtotalWeb, List<SistemaGomas.Messages.ArticuloWeb> articulos)
+        {
+            // Pedimos permiso para actualizar la pantalla desde el hilo de fondo
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action(() => ProcesarOrdenWebEnSilencio(subtotalWeb, articulos)));
+                return;
+            }
+
+            // 1. Cálculos matemáticos (La Web manda el subtotal, la Caja le suma el 18% de ITBIS)
+            decimal impuesto = subtotalWeb * 0.18m;
+            decimal totalGeneral = subtotalWeb + impuesto;
+
+            // 2. Armar los textos detallados para la factura y la alerta
+            string detalleArticulosMessageBox = "";
+            string textoFacturaBackup = $"FECHA: {DateTime.Now:dd/MM/yyyy hh:mm tt}\n";
+            textoFacturaBackup += $"TOTAL PAGADO WEB: {totalGeneral:C} (Pago Online)\n";
+            textoFacturaBackup += "ARTÍCULOS VENDIDOS (WEB):\n";
+
+            // Recorremos la lista de artículos que nos llegó por NServiceBus
+            if (articulos != null)
+            {
+                foreach (var item in articulos)
+                {
+                    detalleArticulosMessageBox += $"- {item.Cantidad}x {item.Descripcion}\n";
+                    textoFacturaBackup += $"  - {item.Cantidad}x {item.Descripcion} (${item.Subtotal})\n";
+                }
+            }
+            textoFacturaBackup += "--------------------------------------------------\n";
+
+            // 3. Facturar en silencio (Lo guardamos en el TXT de backup de ventas sin molestar al cajero)
+            try
+            {
+                System.IO.File.AppendAllText("Backup_VentasOffline.txt", textoFacturaBackup);
+            }
+            catch { }
+
+            // 4. Mostrar la alerta visual con todo el desglose exacto que pediste
+            string mensajeAlerta = $"¡Nueva orden web recibida y facturada automáticamente!\n\n" +
+                                   $"Artículos Comprados:\n{detalleArticulosMessageBox}\n" +
+                                   $"Subtotal: {subtotalWeb:C}\n" +
+                                   $"ITBIS (18%): {impuesto:C}\n" +
+                                   $"TOTAL FACTURADO: {totalGeneral:C}";
+
+            MessageBox.Show(mensajeAlerta, "Venta Web Exitosa", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            // 5. Preparar la memoria y lanzar la vista previa del recibo
+            imprimiendoOrdenWeb = true;
+            reciboWebArticulos = articulos;
+            reciboWebSubtotal = subtotalWeb;
+            reciboWebImpuesto = impuesto;
+            reciboWebTotal = totalGeneral;
+
+            // Mostrar el recibo en pantalla
+            previewImprimir.ShowDialog();
+
+            // Limpiar la memoria al terminar
+            imprimiendoOrdenWeb = false;
         }
     }
 }

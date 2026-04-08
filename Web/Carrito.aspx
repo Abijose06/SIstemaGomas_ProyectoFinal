@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Carrito.aspx.cs" Inherits="WebGomas.Models.Carrito" %>
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Carrito.aspx.cs" Inherits="WebGomas.Models.Carrito" Async="true" %>
 
 <!DOCTYPE html>
 

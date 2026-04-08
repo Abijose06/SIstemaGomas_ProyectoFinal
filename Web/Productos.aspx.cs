@@ -5,6 +5,7 @@ using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using WebGomas.Models;
+using System.Data.SqlClient;
 
 namespace WebGomas
 {
@@ -14,19 +15,45 @@ namespace WebGomas
         // -------------------------------------------------------
         // Datos simulados (hardcoded) — sin base de datos
         // -------------------------------------------------------
+        // -------------------------------------------------------
+        // CATÁLOGO DESDE LA BASE DE DATOS CENTRAL
+        // -------------------------------------------------------
         private List<Producto> ObtenerProductos()
         {
-            return new List<Producto>
+            List<Producto> listaBD = new List<Producto>();
+            string connectionString = @"Server=(localdb)\MSSQLLocalDB;Database=GomasDB;Trusted_Connection=True;";
+
+            using (SqlConnection con = new SqlConnection(connectionString))
             {
-                new Producto { Id = 1, Nombre = "Pilot Sport 4",     Marca = "Michelin",    Precio = 185.00m,   ImagenUrl = "images/GomaPilotSport4.png"},
-                new Producto { Id = 2, Nombre = "Eagle F1 Asymmetric", Marca = "Goodyear",  Precio = 160.00m,   ImagenUrl = "images/GomaEagle F1 Asymmetric.png"},
-                new Producto { Id = 3, Nombre = "Cinturato P7",      Marca = "Pirelli",     Precio = 145.00m,   ImagenUrl = "images/GomaCinturatoP7.png"},
-                new Producto { Id = 4, Nombre = "ContiSportContact", Marca = "Continental", Precio = 170.00m,   ImagenUrl = "images/GomaContiSportContact.png"},
-                new Producto { Id = 5, Nombre = "Potenza S007",      Marca = "Bridgestone", Precio = 155.00m,   ImagenUrl = "images/GomaPotenza S007.png"},
-                new Producto { Id = 6, Nombre = "Ventus S1 Evo3",    Marca = "Hankook",     Precio = 138.00m,   ImagenUrl = "images/GomaVentusS1Evo3.png"},
-                new Producto { Id = 7, Nombre = "Proxes Sport",      Marca = "Toyo",        Precio = 142.00m,   ImagenUrl = "images/GomaProxes Sport.png"},
-                new Producto { Id = 8, Nombre = "Primacy 4+",        Marca = "Michelin",    Precio = 167.00m,   ImagenUrl = "images/GomaPrimacy4.png"}
-            };
+                // NUEVO: Agregamos ImagenUrl a la consulta
+                string query = "SELECT IdProducto, Marca, Modelo, PrecioVenta, ImagenUrl FROM tblProducto WHERE Estado = 1";
+                SqlCommand cmd = new SqlCommand(query, con);
+
+                try
+                {
+                    con.Open();
+                    SqlDataReader reader = cmd.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        listaBD.Add(new Producto
+                        {
+                            Id = Convert.ToInt32(reader["IdProducto"]),
+                            Nombre = reader["Modelo"].ToString(),
+                            Marca = reader["Marca"].ToString(),
+                            Precio = Convert.ToDecimal(reader["PrecioVenta"]),
+
+                            // NUEVO: Leemos la ruta exacta desde la base de datos sin adivinar nada
+                            ImagenUrl = reader["ImagenUrl"].ToString()
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Manejo de errores
+                }
+            }
+
+            return listaBD;
         }
 
         // -------------------------------------------------------

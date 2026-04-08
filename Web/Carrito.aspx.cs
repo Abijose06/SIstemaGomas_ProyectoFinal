@@ -1,9 +1,12 @@
-﻿using System;
+﻿using NServiceBus;
+using SistemaGomas.Messages;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
+using System.Data.SqlClient;
 
 namespace WebGomas.Models
 {
@@ -70,11 +73,19 @@ namespace WebGomas.Models
             rptCarrito.DataSource = carrito;
             rptCarrito.DataBind();
 
-            // Calcular totales
-            decimal total = carrito.Sum(item => item.Subtotal);
+            // --- NUEVO CÁLCULO MATEMÁTICO (Igual a la Caja) ---
+            // Sumamos el costo de los productos
+            decimal subtotal = carrito.Sum(item => item.Subtotal);
 
-            lblTotal.Text = total.ToString("C2");
-            lblSubtotal.Text = total.ToString("C2");
+            // Calculamos el 18% de ITBIS
+            decimal impuesto = subtotal * 0.18m;
+
+            // Sumamos ambos para el total real a pagar
+            decimal totalGeneral = subtotal + impuesto;
+
+            // Mostramos los valores en la página web
+            lblSubtotal.Text = subtotal.ToString("C2");
+            lblTotal.Text = totalGeneral.ToString("C2");
             lblCantidadItems.Text = carrito.Count + (carrito.Count == 1 ? " producto" : " productos");
 
             pnlCarrito.Visible = true;
@@ -133,7 +144,69 @@ namespace WebGomas.Models
         // -------------------------------------------------------
         protected void btnConfirmar_Click(object sender, EventArgs e)
         {
-            Response.Redirect("Confirmacion.aspx");
+            // 1. Obtener el carrito actual de la sesión
+            List<CarritoItem> carrito = Session["carrito"] as List<CarritoItem>;
+
+            // Verificamos si el carrito tiene productos
+            if (carrito != null && carrito.Count > 0)
+            {
+                // --- CÁLCULO MATEMÁTICO ---
+                decimal subtotal = carrito.Sum(item => item.Subtotal);
+                decimal impuesto = subtotal * 0.18m;
+                decimal totalGeneral = subtotal + impuesto;
+
+                // --- INICIO DEL CÓDIGO DE BASE DE DATOS ---
+                string connectionString = @"Server=(localdb)\MSSQLLocalDB;Database=GomasDB;Trusted_Connection=True;";
+
+                using (SqlConnection con = new SqlConnection(connectionString))
+                {
+                    try
+                    {
+                        con.Open();
+
+                        // 1. Insertamos la factura y LE ROBAMOS EL ID que SQL le acaba de asignar (OUTPUT INSERTED.IdFactura)
+                        string queryCabecera = "INSERT INTO tblFactura (IdCliente, Fecha, EstadoFactura, Estado, Impuesto, MetodoPago, IdSucursal, IdEmpleado) OUTPUT INSERTED.IdFactura VALUES (1, GETDATE(), 'Completado', 1, @Impuesto, 'Web', 1, 1)";
+                        int nuevaFacturaId = 0;
+
+                        using (SqlCommand cmd = new SqlCommand(queryCabecera, con))
+                        {
+                            cmd.Parameters.AddWithValue("@Impuesto", impuesto);
+                            nuevaFacturaId = (int)cmd.ExecuteScalar();
+                        }
+
+                        // 2. Ahora NOSOTROS insertamos el detalle con el IdProducto perfecto, sin depender del Core
+                        string queryDetalle = "INSERT INTO tblDetalle_Factura (TipoItem, IdProducto, Cantidad, PrecioUnitario, IdFactura, IdVehiculo, Estado) VALUES ('P', @IdProducto, @Cantidad, @Precio, @IdFactura, 1, 1)";
+
+                        using (SqlCommand cmdDet = new SqlCommand(queryDetalle, con))
+                        {
+                            foreach (var item in carrito)
+                            {
+                                cmdDet.Parameters.Clear();
+                                cmdDet.Parameters.AddWithValue("@IdProducto", item.ProductoId);
+                                cmdDet.Parameters.AddWithValue("@Cantidad", item.Cantidad);
+                                cmdDet.Parameters.AddWithValue("@Precio", item.Precio);
+                                cmdDet.Parameters.AddWithValue("@IdFactura", nuevaFacturaId);
+
+                                cmdDet.ExecuteNonQuery();
+                            }
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        // Ignoramos el error de BD para no frenar la compra
+                    }
+                }
+                // --- FIN DEL CÓDIGO DE BASE DE DATOS ---
+
+                
+
+                // Vaciar el carrito tras la compra exitosa
+                Session["carrito"] = null;
+            }
+
+            // Redirigir a la pantalla de éxito suavemente
+            Response.Redirect("Confirmacion.aspx", false);
+            Context.ApplicationInstance.CompleteRequest();
         }
 
         // -------------------------------------------------------

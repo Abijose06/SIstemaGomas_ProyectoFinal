@@ -1,0 +1,3 @@
+﻿2026-04-08 12:15:36.752 INFO  Logging to 'C:\INTEC\Trimestre 7\IDS345-02 DESARROLLO DE SOFTWARE III\final\SIstemaGomas (2)\SIstemaGomas\SIstemaGomas\Core\App_Data\' with level Info
+2026-04-08 12:15:36.933 INFO  No valid license could be found. Falling back to trial license with start date '2026-03-26'.
+2026-04-08 12:15:36.998 WARN  Trial license expiring in 1 day. Get your free development license at https://particular.net/license/nservicebus?v=7.8.2&t=0&p=windows
